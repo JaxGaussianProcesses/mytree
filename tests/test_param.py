@@ -1,11 +1,9 @@
 import dataclasses
+
 import pytest
 
-from mytree import param_field, Identity, Softplus
+from mytree import Identity, Softplus, param_field
 
-def test_param_field_no_args():
-    with pytest.raises(TypeError):
-        param_field()
 
 @pytest.mark.parametrize("bijector", [Identity, Softplus])
 @pytest.mark.parametrize("trainable", [True, False])
@@ -16,17 +14,28 @@ def test_param(bijector, trainable):
     assert param_field_.metadata["trainable"] == trainable
 
     with pytest.raises(ValueError):
-        param_field(bijector=bijector, trainable=trainable, metadata={"trainable": trainable})
+        param_field(
+            bijector=bijector, trainable=trainable, metadata={"trainable": trainable}
+        )
 
     with pytest.raises(ValueError):
-        param_field(bijector=bijector, trainable=trainable, metadata={"bijector": bijector})
+        param_field(
+            bijector=bijector, trainable=trainable, metadata={"bijector": bijector}
+        )
 
     with pytest.raises(ValueError):
-        param_field(bijector=bijector, trainable=trainable, metadata={"bijector": Softplus, "trainable": trainable})
+        param_field(
+            bijector=bijector,
+            trainable=trainable,
+            metadata={"bijector": Softplus, "trainable": trainable},
+        )
 
     with pytest.raises(ValueError):
-        param_field(bijector=bijector, trainable=trainable, metadata={"pytree_node": True})
-    
-    with pytest.raises(ValueError):
-        param_field(bijector=bijector, trainable=trainable, metadata={"pytree_node": False})
+        param_field(
+            bijector=bijector, trainable=trainable, metadata={"pytree_node": True}
+        )
 
+    with pytest.raises(ValueError):
+        param_field(
+            bijector=bijector, trainable=trainable, metadata={"pytree_node": False}
+        )

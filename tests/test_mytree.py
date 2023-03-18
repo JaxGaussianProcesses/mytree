@@ -1,27 +1,27 @@
-import pytest
+from dataclasses import dataclass, field
+from typing import Any, Iterable
+
 import jax
 import jax.numpy as jnp
 import jax.tree_util as jtu
-
-from mytree import Mytree, param_field, Softplus, Identity, meta
+import pytest
 from simple_pytree import Pytree, static_field
-from dataclasses import field, dataclass
-from typing import Iterable, Any
+
+from mytree import Identity, Mytree, Softplus, meta, param_field
+
 
 @pytest.mark.parametrize("is_dataclass", [True, False])
 def test_init_and_meta_scrambled(is_dataclass):
-
     class Tree(Mytree):
-        
         c: float = field(metadata={"c": 4.0})
         b: float = field(metadata={"b": 5.0})
         a: float = field(metadata={"a": 6.0})
-        
+
         def __init__(self, a, b, c):
-            self.b=b
-            self.a=a
-            self.c=c
-    
+            self.b = b
+            self.a = a
+            self.c = c
+
     if is_dataclass:
         Tree = dataclass(Tree)
 
@@ -44,11 +44,11 @@ def test_init_and_meta_scrambled(is_dataclass):
     # Test replacing changes only the specified field
     new = tree.replace(a=123)
     meta_new = meta(new)
-    
+
     assert new.a == 123
     assert new.b == 2
     assert new.c == 3
-    
+
     assert meta_new.a == {"a": 6.0}
     assert meta_new.b == {"b": 5.0}
     assert meta_new.c == {"c": 4.0}
@@ -56,18 +56,16 @@ def test_init_and_meta_scrambled(is_dataclass):
 
 @pytest.mark.parametrize("is_dataclass", [True, False])
 def test_scrambled_annotations(is_dataclass):
-
     class Tree(Mytree):
-        
         c: float = field(metadata={"c": 4.0})
         b: float = field(metadata={"b": 5.0})
         a: float = field(metadata={"a": 6.0})
-        
+
         def __init__(self, a, b, c):
-            self.a=a
-            self.b=b
-            self.c=c
-    
+            self.a = a
+            self.b = b
+            self.c = c
+
     if is_dataclass:
         Tree = dataclass(Tree)
 
@@ -88,18 +86,16 @@ def test_scrambled_annotations(is_dataclass):
 
 @pytest.mark.parametrize("is_dataclass", [True, False])
 def test_scrambled_init(is_dataclass):
-
     class Tree(Mytree):
-        
         a: float = field(metadata={"a": 6.0})
         b: float = field(metadata={"b": 5.0})
         c: float = field(metadata={"c": 4.0})
-        
+
         def __init__(self, a, b, c):
-            self.b=b
-            self.a=a
-            self.c=c
-    
+            self.b = b
+            self.a = a
+            self.c = c
+
     if is_dataclass:
         Tree = dataclass(Tree)
 
@@ -120,21 +116,20 @@ def test_scrambled_init(is_dataclass):
 
 @pytest.mark.parametrize("is_dataclass", [True, False])
 def test_simple_linear_model(is_dataclass):
-
     class SimpleModel(Mytree):
         weight: float = param_field(bijector=Softplus, trainable=False)
         bias: float
 
         def __init__(self, weight, bias):
-            self.weight = weight 
+            self.weight = weight
             self.bias = bias
-        
+
         def __call__(self, test_point):
             return test_point * self.weight + self.bias
-        
+
     if is_dataclass:
         SimpleModel = dataclass(SimpleModel)
-        
+
     model = SimpleModel(1.0, 2.0)
 
     assert isinstance(model, Mytree)
@@ -169,19 +164,19 @@ def test_simple_linear_model(is_dataclass):
 
     def loss_fn(model):
         model = model.stop_gradient()
-        return (model(1.0) - 2.0)**2
-    
+        return (model(1.0) - 2.0) ** 2
+
     grad = jax.grad(loss_fn)(model)
     assert grad.weight == 0.0
     assert grad.bias == 2.0
 
+
 @pytest.mark.parametrize("is_dataclass", [True, False])
 def test_nested_mytree_structure(is_dataclass):
-
     class SubTree(Mytree):
-        c: float = param_field(Identity)
-        d: float = param_field(Softplus)
-        e: float = param_field(Softplus)
+        c: float = param_field(bijector=Identity)
+        d: float = param_field(bijector=Softplus)
+        e: float = param_field(bijector=Softplus)
 
         def __init__(self, c, d, e):
             self.c = c
@@ -189,15 +184,14 @@ def test_nested_mytree_structure(is_dataclass):
             self.e = e
 
     class Tree(Mytree):
-        a: float = param_field(Identity)
+        a: float = param_field(bijector=Identity)
         sub_tree: SubTree
-        b: float = param_field(Softplus)
+        b: float = param_field(bijector=Softplus)
 
         def __init__(self, a, sub_tree, b):
             self.a = a
             self.sub_tree = sub_tree
             self.b = b
-
 
     if is_dataclass:
         SubTree = dataclass(SubTree)
@@ -299,7 +293,7 @@ def test_nested_mytree_structure(is_dataclass):
 
     new_tree = tree.replace_bijector(b=Identity)
     new_tree = new_tree.replace_trainable(b=False)
-    new_tree = new_tree.replace(sub_tree = new_subtree)
+    new_tree = new_tree.replace(sub_tree=new_subtree)
 
     assert isinstance(new_tree, Mytree)
     assert isinstance(new_tree, Pytree)
@@ -309,7 +303,7 @@ def test_nested_mytree_structure(is_dataclass):
     assert new_tree.sub_tree.c == 2.0
     assert new_tree.sub_tree.d == 3.0
     assert new_tree.sub_tree.e == 4.0
-    
+
     meta_new_tree = meta(new_tree)
 
     assert isinstance(meta_new_tree, Mytree)
@@ -349,7 +343,6 @@ def test_nested_mytree_structure(is_dataclass):
 @pytest.mark.parametrize("is_dataclass", [True, False])
 @pytest.mark.parametrize("iterable", [list, tuple])
 def test_iterable_attribute(is_dataclass, iterable):
-
     class SubTree(Mytree):
         a: int = param_field(bijector=Identity, default=1)
         b: int = param_field(bijector=Softplus, default=2)
@@ -413,7 +406,6 @@ def test_iterable_attribute(is_dataclass, iterable):
     assert meta_tree.trees[2].c["bijector"] == Identity
     assert meta_tree.trees[2].c["trainable"] == False
 
-
     # Test constrain and unconstrain
 
     constrained_tree = tree.constrain()
@@ -455,17 +447,18 @@ def test_iterable_attribute(is_dataclass, iterable):
 
 # The following tests are adapted from equinox 🏴‍☠️
 
+
 def test_mytree_not_enough_attributes():
     @dataclass
     class Tree1(Mytree):
-        weight: Any = param_field(Identity)
+        weight: Any = param_field(bijector=Identity)
 
     with pytest.raises(TypeError):
         Tree1()
 
     @dataclass
     class Tree2(Mytree):
-        weight: Any = param_field(Identity)
+        weight: Any = param_field(bijector=Identity)
 
         def __init__(self):
             return None
@@ -477,14 +470,14 @@ def test_mytree_not_enough_attributes():
 def test_mytree_too_many_attributes():
     @dataclass
     class Tree1(Mytree):
-        weight: Any = param_field(Identity)
+        weight: Any = param_field(bijector=Identity)
 
     with pytest.raises(TypeError):
         Tree1(1, 2)
 
     @dataclass
     class Tree2(Mytree):
-        weight: Any = param_field(Identity)
+        weight: Any = param_field(bijector=Identity)
 
         def __init__(self, weight):
             self.weight = weight
@@ -497,7 +490,7 @@ def test_mytree_too_many_attributes():
 def test_mytree_setattr_after_init():
     @dataclass
     class Tree(Mytree):
-        weight: Any = param_field(Identity)
+        weight: Any = param_field(bijector=Identity)
 
     m = Tree(1)
     with pytest.raises(AttributeError):
@@ -507,7 +500,7 @@ def test_mytree_setattr_after_init():
 def test_wrong_attribute():
     @dataclass
     class Tree(Mytree):
-        weight: Any = param_field(Identity)
+        weight: Any = param_field(bijector=Identity)
 
         def __init__(self, value):
             self.not_weight = value
@@ -522,11 +515,11 @@ def test_inheritance():
 
     @dataclass
     class Tree(Mytree):
-        weight: Any = param_field(Identity)
+        weight: Any = param_field(bijector=Identity)
 
     @dataclass
     class Tree2(Tree):
-        weight2: Any = param_field(Identity)
+        weight2: Any = param_field(bijector=Identity)
 
     m = Tree2(1, 2)
     assert m.weight == 1
@@ -544,7 +537,7 @@ def test_inheritance():
 
     @dataclass
     class Tree3(Tree):
-        weight3: Any = param_field(Identity)
+        weight3: Any = param_field(bijector=Identity)
 
         def __init__(self, *, weight3, **kwargs):
             self.weight3 = weight3
@@ -558,11 +551,11 @@ def test_inheritance():
 
     @dataclass
     class Tree4(Mytree):
-        weight4: Any = param_field(Identity)
+        weight4: Any = param_field(bijector=Identity)
 
     @dataclass
     class Tree5(Tree4):
-        weight5: Any = param_field(Identity)
+        weight5: Any = param_field(bijector=Identity)
 
     with pytest.raises(TypeError):
         m = Tree5(value4=1, weight5=2)
@@ -578,7 +571,7 @@ def test_inheritance():
 
     @dataclass
     class Tree7(Tree4):
-        weight7: Any = param_field(Identity)
+        weight7: Any = param_field(bijector=Identity)
 
         def __init__(self, value7, **kwargs):
             self.weight7 = value7
@@ -592,7 +585,7 @@ def test_inheritance():
 def test_static_field():
     @dataclass
     class Tree(Mytree):
-        field1: int = param_field(Identity)
+        field1: int = param_field(bijector=Identity)
         field2: int = static_field()
         field3: int = static_field(default=3)
 
@@ -622,8 +615,8 @@ def test_init_subclass():
     assert ran == [True]
 
 
-
 # Taken from simple-pytree 🏴‍☠️
+
 
 class TestMytree:
     def test_immutable_pytree(self):
