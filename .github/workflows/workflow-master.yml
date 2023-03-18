@@ -2,7 +2,7 @@ name: Python Master Workflow
 on:
   push:
     branches:
-      - "master"
+      - "main"
   pull_request:
     branches:
       - "*"
@@ -14,7 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: Set up Python
-        uses: actions/setup-python@master
+        uses: actions/setup-python@main
         with:
           python-version: 3.9
       - name: Generate coverage report
