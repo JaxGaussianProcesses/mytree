@@ -1,11 +1,7 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 import codecs
 import os
 
 from setuptools import find_packages, setup
-
-NAME = "mytree"
 
 CLASSIFIERS = [
     "Intended Audience :: Science/Research",
@@ -46,7 +42,7 @@ def read(*local_path: str) -> str:
 
 if __name__ == "__main__":
     setup(
-        name=NAME,
+        name="mytree",
         version="0.1.0",
         author="Daniel Dodd",
         author_email="daniel_dodd@icloud.com",
@@ -55,8 +51,6 @@ if __name__ == "__main__":
         long_description=read("README.md"),
         long_description_content_type="text/markdown",
         packages=find_packages(".", exclude=["tests"]),
-        package_data={NAME: ["py.typed"]},
-        include_package_data=True,
         python_requires=">=3.9",
         install_requires=INSTALL_REQUIRES,
         extras_require=EXTRA_REQUIRE,
