@@ -2,12 +2,12 @@ from __future__ import annotations
 
 __all__ = ["Mytree", "meta_leaves", "meta"]
 
+from copy import copy, deepcopy
+from typing import TYPE_CHECKING, Any, Callable, Dict, List
+
 import jax
 import jax.tree_util as jtu
-
 from simple_pytree import Pytree
-from typing import Any, Dict, List, TYPE_CHECKING, Callable
-from copy import copy, deepcopy
 
 from .bijectors import Bijector, Identity
 
@@ -15,14 +15,14 @@ from .bijectors import Bijector, Identity
 class Mytree(Pytree):
     _pytree__leaf_meta: Dict[str, Any]
     _pytree__annotations: List[str]
-    
 
     def __init_subclass__(cls, mutable: bool = False):
         cls._pytree__leaf_meta = dict()
         cls._pytree__annotations = _get_all_annotations(cls)
         super().__init_subclass__(mutable=mutable)
-        cls._pytree__static_fields.update(["_pytree__leaf_meta", "_pytree__annotations"])
-
+        cls._pytree__static_fields.update(
+            ["_pytree__leaf_meta", "_pytree__annotations"]
+        )
 
     def replace(self, **kwargs: Any) -> Mytree:
         """
@@ -39,18 +39,15 @@ class Mytree(Pytree):
         pytree.__dict__.update(kwargs)
         return pytree
 
-
     if not TYPE_CHECKING:
-        
-        def __setattr__(self, field: str, value: Any):
 
+        def __setattr__(self, field: str, value: Any):
             if field not in self._pytree__annotations:
                 raise AttributeError(f"{type(self)} has no annotation field {field}.")
-            
-            super().__setattr__(field, value)
-            
-            if field not in self._pytree__static_fields:
 
+            super().__setattr__(field, value)
+
+            if field not in self._pytree__static_fields:
                 _not_pytree = (
                     jtu.tree_map(
                         lambda x: isinstance(x, Pytree),
@@ -59,20 +56,26 @@ class Mytree(Pytree):
                     )
                     == False
                 )
-            
-                if _not_pytree:
 
+                if _not_pytree:
                     try:
-                        field_metadata = {**type(self).__dict__['__dataclass_fields__'][field].metadata}
+                        field_metadata = {
+                            **type(self)
+                            .__dict__["__dataclass_fields__"][field]
+                            .metadata
+                        }
                     except KeyError:
                         try:
                             field_metadata = {**type(self).__dict__[field].metadata}
                         except KeyError:
                             field_metadata = {}
 
-                    object.__setattr__(self, '_pytree__leaf_meta', self._pytree__leaf_meta | {field: field_metadata})
-            
-
+                    if field_metadata.get("pytree_node", True):
+                        object.__setattr__(
+                            self,
+                            "_pytree__leaf_meta",
+                            self._pytree__leaf_meta | {field: field_metadata},
+                        )
 
     def replace_meta(self, **kwargs: Any) -> Mytree:
         """
@@ -86,9 +89,10 @@ class Mytree(Pytree):
                 raise ValueError(f"'{key}' is not a leaf of {type(self).__name__}")
 
         pytree = copy(self)
-        pytree.__dict__.update(_pytree__leaf_meta={**pytree._pytree__leaf_meta, **kwargs})
+        pytree.__dict__.update(
+            _pytree__leaf_meta={**pytree._pytree__leaf_meta, **kwargs}
+        )
         return pytree
-
 
     def update_meta(self, **kwargs: Any) -> Mytree:
         """
@@ -112,25 +116,24 @@ class Mytree(Pytree):
                 new[key] = value
         pytree.__dict__.update(_pytree__leaf_meta=new)
         return pytree
-    
 
     def replace_trainable(Mytree: Mytree, **kwargs: Dict[str, bool]) -> Mytree:
         """Replace the trainability status of local nodes of the Mytree."""
         return Mytree.update_meta(**{k: {"trainable": v} for k, v in kwargs.items()})
 
-
     def replace_bijector(Mytree: Mytree, **kwargs: Dict[str, Bijector]) -> Mytree:
         """Replace the bijectors of local nodes of the Mytree."""
         return Mytree.update_meta(**{k: {"bijector": v} for k, v in kwargs.items()})
-    
-    
+
     def constrain(self) -> Mytree:
         """Transform model parameters to the constrained space according to their defined bijectors.
 
         Returns:
             Mytree: tranformed to the constrained space.
         """
-        return _meta_map(lambda leaf, meta: meta.get("bijector", Identity).forward(leaf), self)
+        return _meta_map(
+            lambda leaf, meta: meta.get("bijector", Identity).forward(leaf), self
+        )
 
     def unconstrain(self) -> Mytree:
         """Transform model parameters to the unconstrained space according to their defined bijectors.
@@ -138,7 +141,9 @@ class Mytree(Pytree):
         Returns:
             Mytree: tranformed to the unconstrained space.
         """
-        return _meta_map(lambda leaf, meta: meta.get("bijector", Identity).inverse(leaf), self)
+        return _meta_map(
+            lambda leaf, meta: meta.get("bijector", Identity).inverse(leaf), self
+        )
 
     def stop_gradient(self) -> Mytree:
         """Stop gradients flowing through the Mytree.
@@ -146,12 +151,15 @@ class Mytree(Pytree):
         Returns:
             Mytree: with gradients stopped.
         """
+
         # 🛑 Stop gradients flowing through a given leaf if it is not trainable.
         def _stop_grad(leaf: jax.Array, trainable: bool) -> jax.Array:
             return jax.lax.cond(trainable, lambda x: x, jax.lax.stop_gradient, leaf)
 
-        return _meta_map(lambda leaf, meta: _stop_grad(leaf, meta.get("trainable", True)), self)
-    
+        return _meta_map(
+            lambda leaf, meta: _stop_grad(leaf, meta.get("trainable", True)), self
+        )
+
 
 def _meta_map(f: Callable[[Any, Dict[str, Any]], Any], pytree: Mytree) -> Mytree:
     """Apply a function to a pytree where the first argument are the pytree leaves, and the second argument are the pytree metadata leaves.
@@ -187,7 +195,9 @@ def _get_all_annotations(cls: type) -> Dict[str, type]:
 
 
 def _toplevel_meta(pytree: Mytree) -> List[Dict[str, Any]]:
-    return [pytree._pytree__leaf_meta[k] for k in sorted(pytree._pytree__leaf_meta.keys())]
+    return [
+        pytree._pytree__leaf_meta[k] for k in sorted(pytree._pytree__leaf_meta.keys())
+    ]
 
 
 def meta_leaves(pytree: Mytree) -> List[Dict[str, Any]]:
@@ -226,7 +236,7 @@ def meta(pytree: Mytree) -> Mytree:
 
     Args:
         pytree (Mytree): Mytree to get the meta of.
-    
+
     Returns:
         Mytree: meta of the Mytree.
     """
