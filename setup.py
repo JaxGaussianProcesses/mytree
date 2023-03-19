@@ -13,15 +13,11 @@ CLASSIFIERS = [
 INSTALL_REQUIRES = [
     "jax>=0.4.1",
     "jaxlib>=0.4.1",
-    "simple-pytree==0.1.2",
+    "simple-pytree==0.1.6",
 ]
 
 EXTRA_REQUIRE = {
-    "dev": [
-        "pytest",
-        "pre-commit",
-        "pytest-cov",
-    ],
+    "dev": ["pytest", "pre-commit", "pytest-cov", "flax"],
 }
 
 GLOBAL_PATH = os.path.dirname(os.path.realpath(__file__))

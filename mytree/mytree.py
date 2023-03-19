@@ -7,22 +7,19 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List
 
 import jax
 import jax.tree_util as jtu
-from simple_pytree import Pytree
+from simple_pytree import Pytree, static_field
 
 from .bijectors import Bijector, Identity
 
 
 class Mytree(Pytree):
-    _pytree__leaf_meta: Dict[str, Any]
-    _pytree__annotations: List[str]
+    _pytree__leaf_meta: Dict[str, Any] = static_field()
+    _pytree__annotations: List[str] = static_field()
 
     def __init_subclass__(cls, mutable: bool = False):
         cls._pytree__leaf_meta = dict()
         cls._pytree__annotations = _get_all_annotations(cls)
         super().__init_subclass__(mutable=mutable)
-        cls._pytree__static_fields.update(
-            ["_pytree__leaf_meta", "_pytree__annotations"]
-        )
 
     def replace(self, **kwargs: Any) -> Mytree:
         """
