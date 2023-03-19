@@ -447,6 +447,30 @@ def test_iterable_attribute(is_dataclass, iterable):
     assert unconstrained_tree.trees[2].c == Identity.inverse(3.0)
 
 
+@pytest.mark.parametrize("is_dataclass", [True, False])
+def test_pytree_leaf_meta_inheritence_and_unmarked_fields(is_dataclass):
+    class A(Mytree):
+        a: int = static_field()
+
+        def __init__(self, a=1, b=2) -> None:
+            self.a = a
+            self.b = b
+            self.h = 3
+
+    class B(A):
+        c: int
+
+        def __init__(self, c=3) -> None:
+            super().__init__()
+            self.c = c
+
+    if is_dataclass:
+        A = dataclasses.dataclass(A)
+        B = dataclasses.dataclass(B)
+
+    assert B()._pytree__leaf_meta == {"b": {}, "h": {}, "c": {}}
+
+
 # The following tests are adapted from equinox 🏴‍☠️
 
 
@@ -477,17 +501,6 @@ def test_mytree_too_many_attributes():
     with pytest.raises(TypeError):
         Tree1(1, 2)
 
-    @dataclass
-    class Tree2(Mytree):
-        weight: Any = param_field(bijector=Identity)
-
-        def __init__(self, weight):
-            self.weight = weight
-            self.something_else = True
-
-    with pytest.raises(AttributeError):
-        Tree2(1)
-
 
 def test_mytree_setattr_after_init():
     @dataclass
@@ -497,18 +510,6 @@ def test_mytree_setattr_after_init():
     m = Tree(1)
     with pytest.raises(AttributeError):
         m.asdf = True
-
-
-def test_wrong_attribute():
-    @dataclass
-    class Tree(Mytree):
-        weight: Any = param_field(bijector=Identity)
-
-        def __init__(self, value):
-            self.not_weight = value
-
-    with pytest.raises(AttributeError):
-        Tree(1)
 
 
 # The main part of this test is to check that __init__ works correctly.

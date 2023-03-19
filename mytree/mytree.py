@@ -14,11 +14,9 @@ from .bijectors import Bijector, Identity
 
 class Mytree(Pytree):
     _pytree__leaf_meta: Dict[str, Any] = static_field()
-    _pytree__annotations: List[str] = static_field()
 
     def __init_subclass__(cls, mutable: bool = False):
         cls._pytree__leaf_meta = dict()
-        cls._pytree__annotations = _get_all_annotations(cls)
         super().__init_subclass__(mutable=mutable)
 
     def replace(self, **kwargs: Any) -> Mytree:
@@ -39,11 +37,9 @@ class Mytree(Pytree):
     if not TYPE_CHECKING:
 
         def __setattr__(self, field: str, value: Any):
-            if field not in self._pytree__annotations:
-                raise AttributeError(f"{type(self)} has no annotation field {field}.")
-
             super().__setattr__(field, value)
 
+            # TODO: Clean up this mess.
             if field not in self._pytree__static_fields:
                 _not_pytree = (
                     jtu.tree_map(
@@ -63,7 +59,12 @@ class Mytree(Pytree):
                         }
                     except KeyError:
                         try:
-                            field_metadata = {**type(self).__dict__[field].metadata}
+                            dataclass_field_ = type(self).__dict__[field]
+                            try:
+                                field_metadata = {**dataclass_field_.metadata}
+                            except AttributeError:
+                                field_metadata = {}
+
                         except KeyError:
                             field_metadata = {}
 
@@ -171,24 +172,6 @@ def _meta_map(f: Callable[[Any, Dict[str, Any]], Any], pytree: Mytree) -> Mytree
     leaves, treedef = jtu.tree_flatten(pytree)
     all_leaves = [leaves] + [meta_leaves(pytree)]
     return treedef.unflatten(f(*xs) for xs in zip(*all_leaves))
-
-
-# Credit goes to Treeo for this function. 🏴‍☠️
-def _get_all_annotations(cls: type) -> Dict[str, type]:
-    """
-    Returns a dictionary of all the annotations of a class.
-
-    Args:
-        cls (type): Class to get the annotations of.
-
-    Returns:
-        Dict[str, type]: Dictionary of all the annotations of the class.
-    """
-    d = {}
-    for c in reversed(cls.mro()):
-        if hasattr(c, "__annotations__"):
-            d.update(**c.__annotations__)
-    return d
 
 
 def _toplevel_meta(pytree: Mytree) -> List[Dict[str, Any]]:
