@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-__all__ = ["Mytree", "meta_leaves", "meta"]
+__all__ = ["Mytree", "meta_leaves", "meta_flatten", "meta_map", "meta"]
 
 import dataclasses
 from copy import copy, deepcopy
