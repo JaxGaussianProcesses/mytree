@@ -31,9 +31,13 @@ class Mytree(Pytree):
 
     def replace(self, **kwargs: Any) -> Mytree:
         """
-        Replace the values of the fields of the object with the values of the
-        keyword arguments. A new object will be created with the same
-        type as the original object.
+        Replace the values of the fields of the object.
+
+        Args:
+            **kwargs: keyword arguments to replace the fields of the object.
+
+        Returns:
+            Mytree: with the fields replaced.
         """
         fields = vars(self)
         for key in kwargs:
@@ -46,14 +50,18 @@ class Mytree(Pytree):
 
     def replace_meta(self, **kwargs: Any) -> Mytree:
         """
-        Replace the values of the fields of the object with the values of the
-        keyword arguments. If the object is a dataclass, `dataclasses.replace`
-        will be used. Otherwise, a new object will be created with the same
-        type as the original object.
+        Replace the metadata of the fields.
+
+        Args:
+            **kwargs: keyword arguments to replace the metadata of the fields of the object.
+
+        Returns:
+            Mytree: with the metadata of the fields replaced.
         """
+        fields = vars(self)
         for key in kwargs:
-            if key not in self._pytree__meta.keys():
-                raise ValueError(f"'{key}' is not a leaf of {type(self).__name__}")
+            if key not in fields:
+                raise ValueError(f"'{key}' is not a field of {type(self).__name__}")
 
         pytree = copy(self)
         pytree.__dict__.update(_pytree__meta={**pytree._pytree__meta, **kwargs})
@@ -61,16 +69,18 @@ class Mytree(Pytree):
 
     def update_meta(self, **kwargs: Any) -> Mytree:
         """
-        Replace the values of the fields of the object with the values of the
-        keyword arguments. If the object is a dataclass, `dataclasses.replace`
-        will be used. Otherwise, a new object will be created with the same
-        type as the original object.
+        Update the metadata of the fields. The metadata must already exist.
+
+        Args:
+            **kwargs: keyword arguments to replace the fields of the object.
+
+        Returns:
+            Mytree: with the fields replaced.
         """
+        fields = vars(self)
         for key in kwargs:
-            if key not in self._pytree__meta.keys():
-                raise ValueError(
-                    f"'{key}' is not an attribute of {type(self).__name__}"
-                )
+            if key not in fields:
+                raise ValueError(f"'{key}' is not a field of {type(self).__name__}")
 
         pytree = copy(self)
         new = deepcopy(pytree._pytree__meta)
@@ -82,13 +92,13 @@ class Mytree(Pytree):
         pytree.__dict__.update(_pytree__meta=new)
         return pytree
 
-    def replace_trainable(Mytree: Mytree, **kwargs: Dict[str, bool]) -> Mytree:
+    def replace_trainable(self: Mytree, **kwargs: Dict[str, bool]) -> Mytree:
         """Replace the trainability status of local nodes of the Mytree."""
-        return Mytree.update_meta(**{k: {"trainable": v} for k, v in kwargs.items()})
+        return self.update_meta(**{k: {"trainable": v} for k, v in kwargs.items()})
 
-    def replace_bijector(Mytree: Mytree, **kwargs: Dict[str, Bijector]) -> Mytree:
+    def replace_bijector(self: Mytree, **kwargs: Dict[str, Bijector]) -> Mytree:
         """Replace the bijectors of local nodes of the Mytree."""
-        return Mytree.update_meta(**{k: {"bijector": v} for k, v in kwargs.items()})
+        return self.update_meta(**{k: {"bijector": v} for k, v in kwargs.items()})
 
     def constrain(self) -> Mytree:
         """Transform model parameters to the constrained space according to their defined bijectors.

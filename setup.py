@@ -47,7 +47,7 @@ if __name__ == "__main__":
         long_description=read("README.md"),
         long_description_content_type="text/markdown",
         packages=find_packages(".", exclude=["tests"]),
-        python_requires=">=3.9",
+        python_requires=">=3.8",
         install_requires=INSTALL_REQUIRES,
         extras_require=EXTRA_REQUIRE,
         zip_safe=True,
