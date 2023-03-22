@@ -1,5 +1,6 @@
 # My🌳
 [![PyPI version](https://badge.fury.io/py/mytree.svg)](https://badge.fury.io/py/mytree)
+[![codecov](https://codecov.io/gh/Daniel-Dodd/mytree/branch/main/graph/badge.svg?token=Q1R280Vb5i)](https://codecov.io/gh/Daniel-Dodd/mytree)
 
 
 "**M**odule p**ytree**s" that cleanly handle parameter **trainability** and **transformations** for JAX models.
