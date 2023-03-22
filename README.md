@@ -1,6 +1,7 @@
 # My🌳
 [![PyPI version](https://badge.fury.io/py/mytree.svg)](https://badge.fury.io/py/mytree)
 
+
 "**M**odule p**ytree**s" that cleanly handle parameter **trainability** and **transformations** for JAX models.
 
 ## Installation
@@ -134,7 +135,7 @@ from mytree import meta
 meta(model)
 ```
 ```
-SimpleModel(weight={'bijector': Bijector(forward=<function <lambda> at 0x17a024e50>, inverse=<function <lambda> at 0x17a024430>), 'trainable': False, 'pytree_node': True}, bias={})
+SimpleModel(weight=({'bijector': Bijector(forward=<function <lambda> at 0x17a024e50>, inverse=<function <lambda> at 0x17a024430>), 1.0), 'trainable': False, 'pytree_node': True}, bias=({}, 2.0))
 ```
 
 Or the metadata pytree leaves via `meta_leaves`.
@@ -143,28 +144,27 @@ from mytree import meta_leaves
 meta_leaves(model)
 ```
 ```
-[{},
- {'bijector': Bijector(forward=<function <lambda> at 0x17a024e50>, inverse=<function <lambda> at 0x17a024430>),
+[({}, 2.0),
+ ({'bijector': Bijector(forward=<function <lambda> at 0x17a024e50>, inverse=<function <lambda> at 0x17a024430>),
   'trainable': False,
-  'pytree_node': True}]
+  'pytree_node': True}, 1.0)]
 ```
 Note this shows any metadata defined via a `dataclasses.field` for the pytree leaves. So feel free to define your own.
 
 ### Applying `field` metadata
-Leaf metadata can be applied via the `_meta_map` function.
+Leaf metadata can be applied via the `meta_map` function.
 ```python
-from mytree.mytree import _meta_map
+from mytree import meta_map
 
-# Function passed to `_meta_map` has
-# - First argument as a leaf
-# - Second argument as the corresponding leaf metadata (dictionary)!
-def if_trainable_then_10(leaf, metadata):
-    if metadata.get("trainable", True):
+# Function passed to `meta_map` has its argument as a `(meta, leaf)` tuple!
+def if_trainable_then_10(meta_leaf):
+    meta_leaf
+    if meta.get("trainable", True):
         return 10.0
     else:
         return leaf
 
-_meta_map(if_trainable_then_10, model)
+meta_map(if_trainable_then_10, model)
 ```
 ```
 SimpleModel(weight=1.0, bias=10.0)
@@ -181,15 +181,15 @@ from simple_pytree import static_field
 class StaticExample(Mytree):
     b: float = static_field
     
-    def __init__(self, a=1, b=2):
+    def __init__(self, a=1.0, b=2.0):
         self.a=a
         self.b=b
     
 jtu.tree_leaves(StaticExample())
 ```
 ```
-[1]
+[1.0]
 ```
 
 ## Performance 🏎
-This library is experimental. Preliminary benchmarks can be found in: https://github.com/Daniel-Dodd/mytree/blob/master/benchmarks/benchmarks.ipynb
+Preliminary benchmarks can be found in: https://github.com/Daniel-Dodd/mytree/blob/master/benchmarks/benchmarks.ipynb
