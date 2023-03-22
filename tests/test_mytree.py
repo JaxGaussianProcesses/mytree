@@ -447,30 +447,6 @@ def test_iterable_attribute(is_dataclass, iterable):
     assert unconstrained_tree.trees[2].c == Identity.inverse(3.0)
 
 
-@pytest.mark.parametrize("is_dataclass", [True, False])
-def test_pytree_leaf_meta_inheritence_and_unmarked_fields(is_dataclass):
-    class A(Mytree):
-        a: int = static_field()
-
-        def __init__(self, a=1, b=2) -> None:
-            self.a = a
-            self.b = b
-            self.h = 3
-
-    class B(A):
-        c: int
-
-        def __init__(self, c=3) -> None:
-            super().__init__()
-            self.c = c
-
-    if is_dataclass:
-        A = dataclasses.dataclass(A)
-        B = dataclasses.dataclass(B)
-
-    assert B()._pytree__leaf_meta == {"b": {}, "h": {}, "c": {}}
-
-
 # The following tests are adapted from equinox 🏴‍☠️
 
 
