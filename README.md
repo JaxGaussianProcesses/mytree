@@ -94,9 +94,9 @@ And we see that `weight`'s parameter is no longer transformed under the `Identit
 
 Applying `stop_gradient` **within** the loss function, prevents the flow of gradients during forward or reverse-mode automatic differentiation.
 ```python
-# Create simulated data.
 import jax
 
+# Create simulated data.
 n = 100
 key = jax.random.PRNGKey(123)
 x = jax.random.uniform(key, (n, ))
@@ -158,7 +158,7 @@ from mytree import meta_map
 
 # Function passed to `meta_map` has its argument as a `(meta, leaf)` tuple!
 def if_trainable_then_10(meta_leaf):
-    meta_leaf
+    meta, leaf = meta_leaf
     if meta.get("trainable", True):
         return 10.0
     else:
