@@ -172,6 +172,28 @@ def test_simple_linear_model(is_dataclass):
     assert grad.weight == 0.0
     assert grad.bias == 2.0
 
+    new = model.replace_meta(bias={"amazing": True})
+    assert new.weight == 1.0
+    assert new.bias == 2.0
+    assert model.weight == 1.0
+    assert model.bias == 2.0
+    assert meta(new).bias == {"amazing": True}
+    assert meta(model).bias == {}
+
+    with pytest.raises(ValueError, match=f"'cool' is not a field of SimpleModel"):
+        model.replace_meta(cool={"don't": "think so"})
+
+    with pytest.raises(ValueError, match=f"'cool' is not a field of SimpleModel"):
+        model.update_meta(cool={"don't": "think so"})
+
+    new = model.update_meta(bias={"amazing": True})
+    assert new.weight == 1.0
+    assert new.bias == 2.0
+    assert model.weight == 1.0
+    assert model.bias == 2.0
+    assert meta(new).bias == {"amazing": True}
+    assert meta(model).bias == {}
+
 
 @pytest.mark.parametrize("is_dataclass", [True, False])
 def test_nested_mytree_structure(is_dataclass):
