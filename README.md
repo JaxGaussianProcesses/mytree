@@ -194,3 +194,7 @@ jtu.tree_leaves(StaticExample())
 
 ## Performance 🏎
 Preliminary benchmarks can be found in: https://github.com/Daniel-Dodd/mytree/blob/master/benchmarks/benchmarks.ipynb
+
+## Collab Example
+a google collab file with all of the above code segments can be found at https://colab.research.google.com/drive/1sQCvCkwp2Pi2K8BkF1evdZZpiJGC-Nqk?usp=sharing
+
